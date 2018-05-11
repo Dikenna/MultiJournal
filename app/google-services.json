@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "285045099147",
+    "firebase_url": "https://multijournal-16234.firebaseio.com",
+    "project_id": "multijournal-16234",
+    "storage_bucket": "multijournal-16234.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:285045099147:android:1e22aaa818be1037",
+        "android_client_info": {
+          "package_name": "com.multijournal.android"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "285045099147-597hekam8j4r12pqt062j5ist92o68gk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.multijournal.android",
+            "certificate_hash": "f3d7fe73ddfab403b4f527e13f1d19bac89906e7"
+          }
+        },
+        {
+          "client_id": "285045099147-3qvfsns1an4ger0r0a0eguraf802h8i1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFwohAQ7NEeGjunegk8u9co_399KKKHTE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "285045099147-3qvfsns1an4ger0r0a0eguraf802h8i1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
