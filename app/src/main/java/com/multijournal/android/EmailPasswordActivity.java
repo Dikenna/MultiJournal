@@ -28,11 +28,18 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A login screen that offers login via email/password.
@@ -45,10 +52,9 @@ public class EmailPasswordActivity extends AppCompatActivity implements
     private TextView mStatusTextView;
     private TextView mDetailTextView;
     private EditText mEmailField, mPasswordField, mNameField;
-
-    // [START declare_auth]
     private FirebaseAuth mAuth;
-    // [END declare_auth]
+
+    private FirebaseFirestore db;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -61,6 +67,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
         mEmailField = findViewById(R.id.field_email);
         mPasswordField = findViewById(R.id.field_password);
         mNameField = findViewById(R.id.field_name);
+        db = FirebaseFirestore.getInstance();
 
         // Buttons
         findViewById(R.id.email_sign_in_button).setOnClickListener(this);
@@ -78,16 +85,23 @@ public class EmailPasswordActivity extends AppCompatActivity implements
     public void onStart() {
         super.onStart();
         // Check if user is signed in (non-null) and update UI accordingly.
-        FirebaseUser currentUser = mAuth.getCurrentUser();
-        if(currentUser!=null) {
-            Intent intent = new Intent(EmailPasswordActivity.this, MainActivity.class);
-            intent.putExtra("user_name", currentUser.getDisplayName().toString());
-            intent.putExtra("user_email", currentUser.getEmail());
-            intent.putExtra("user_UID", currentUser.getUid());
+        if(mAuth!=null) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser != null) {
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.putExtra("user_name", currentUser.getDisplayName().toString());
+                intent.putExtra("user_email", currentUser.getEmail().toString());
+                intent.putExtra("user_UID", currentUser.getUid().toString());
 
-            startActivity(intent);
+                System.out.println("\n*****\n****\n" + currentUser.getEmail());
+                Log.d(TAG, "Intent Test: " + currentUser.getEmail());
+                Log.d(TAG, "Intent Test: " + currentUser.getDisplayName());
+                Log.d(TAG, "Intent Test: " + currentUser.getUid());
+
+                updateUI(currentUser);
+                startActivity(intent);
+            }
         }
-        updateUI(currentUser);
     }
     // [END on_start_check_user]
 
@@ -113,7 +127,28 @@ public class EmailPasswordActivity extends AppCompatActivity implements
                                     .setDisplayName(mNameField.getText().toString())
                                     .build();
                             user.updateProfile(profileUpdates);
+
+                            //Create new collection for new user
+                            Map<String, Object> user_map = new HashMap<>();
+
+                            user_map.put("name", mNameField.getText().toString());
+                            db.collection("users")
+                                    .add(user_map)
+                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                                        @Override
+                                        public void onSuccess(DocumentReference documentReference) {
+                                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                                        }
+                                    })
+                                    .addOnFailureListener(new OnFailureListener() {
+                                        @Override
+                                        public void onFailure(@NonNull Exception e) {
+                                            Log.w(TAG, "Error adding document", e);
+                                        }
+                                    });
+
                             updateUI(user);
+
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
