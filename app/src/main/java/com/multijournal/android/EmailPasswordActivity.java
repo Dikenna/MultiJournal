@@ -83,7 +83,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
 
     @Override
     public void onStart() {
-        super.onStart();   
+        super.onStart();
 
         Intent receivedIntent = getIntent();
         boolean sign_out = receivedIntent.getBooleanExtra("sign_out", false);
@@ -94,13 +94,13 @@ public class EmailPasswordActivity extends AppCompatActivity implements
             FirebaseUser currentUser = mAuth.getCurrentUser();
             if (currentUser != null) {
                 updateUI(currentUser);
-                goToMain(currentUser);
+                goToHome(currentUser);
             }
         }
     }
 
-    private void goToMain(FirebaseUser currentUser){
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+    private void goToHome(FirebaseUser currentUser){
+        Intent intent = new Intent(getApplicationContext(), HomeActivity.class);
         intent.putExtra("user_email", currentUser.getEmail().toString());
         intent.putExtra("user_UID", currentUser.getUid().toString());
         startActivity(intent);
@@ -152,7 +152,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
                                     .collection("entries")
                                     .document("entry1").set(je.getHashMap());
 
-                            goToMain(user);
+                            goToHome(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
@@ -206,6 +206,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
         findViewById(R.id.verify_email_button).setEnabled(false);
 
         // Send verification email
+        mAuth = FirebaseAuth.getInstance();
         final FirebaseUser user = mAuth.getCurrentUser();
         user.sendEmailVerification()
                 .addOnCompleteListener(this, new OnCompleteListener<Void>() {
@@ -213,11 +214,11 @@ public class EmailPasswordActivity extends AppCompatActivity implements
                     public void onComplete(@NonNull Task<Void> task) {
                         // Re-enable button
                         findViewById(R.id.verify_email_button).setEnabled(true);
-
                         if (task.isSuccessful()) {
                             Toast.makeText(EmailPasswordActivity.this,
                                     "Verification email sent to " + user.getEmail(),
                                     Toast.LENGTH_SHORT).show();
+                            goToHome(user);
                         } else {
                             Log.e(TAG, "sendEmailVerification", task.getException());
                             Toast.makeText(EmailPasswordActivity.this,
