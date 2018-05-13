@@ -19,11 +19,6 @@
     <string name="title_activity_email_password">Sign in</string>
 
 
-
-
-
-
-
     <!-- From email authentication github -->
 
     <string name="label_google_sign_in">Firebase + Google Sign In</string>
@@ -111,5 +106,9 @@
 
     <string name="id_fmt">User ID: %s</string>
     <string name="email_fmt">Email: %s</string>
+    <string name="title_activity_home">HomeActivity</string>
+    <string name="title_home">Home</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_notifications">Notifications</string>
 
 </resources>

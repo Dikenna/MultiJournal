@@ -66,4 +66,10 @@ public class JournalEntry implements Entry{
         return mTextEntry;
     }
 
+    public String getEntryType(){
+        if(mAudioRef!=null) return "audio";
+        else if(mPhotoRef!=null) return "photo";
+        else return "text";
+    }
+
 }

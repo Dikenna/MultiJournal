@@ -50,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-
         //Working Code to add an entry
 /*
         findViewById(R.id.main_add_entry_button).setOnClickListener(new View.OnClickListener() {
