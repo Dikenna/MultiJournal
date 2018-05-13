@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.multijournal.android;
 
 import android.content.Intent;
@@ -38,6 +37,7 @@ import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +51,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
 
     private TextView mStatusTextView;
     private TextView mDetailTextView;
-    private EditText mEmailField, mPasswordField, mNameField;
+    private EditText mEmailField, mPasswordField;// mNameField;
     private FirebaseAuth mAuth;
 
     private FirebaseFirestore db;
@@ -66,7 +66,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
         mDetailTextView = findViewById(R.id.detail);
         mEmailField = findViewById(R.id.field_email);
         mPasswordField = findViewById(R.id.field_password);
-        mNameField = findViewById(R.id.field_name);
+        //mNameField = findViewById(R.id.field_name);
         db = FirebaseFirestore.getInstance();
 
         // Buttons
@@ -80,40 +80,51 @@ public class EmailPasswordActivity extends AppCompatActivity implements
         // [END initialize_auth]
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        mAuth = null;
+    }
+
     // [START on_start_check_user]
     @Override
     public void onStart() {
         super.onStart();
+
+        Intent receivedIntent = getIntent();
+        boolean sign_out = receivedIntent.getBooleanExtra("sign_out", false);
+        if(sign_out) mAuth = null;
+
         // Check if user is signed in (non-null) and update UI accordingly.
         if(mAuth!=null) {
             FirebaseUser currentUser = mAuth.getCurrentUser();
             if (currentUser != null) {
-                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-                intent.putExtra("user_name", currentUser.getDisplayName().toString());
-                intent.putExtra("user_email", currentUser.getEmail().toString());
-                intent.putExtra("user_UID", currentUser.getUid().toString());
-
-                System.out.println("\n*****\n****\n" + currentUser.getEmail());
-                Log.d(TAG, "Intent Test: " + currentUser.getEmail());
-                Log.d(TAG, "Intent Test: " + currentUser.getDisplayName());
-                Log.d(TAG, "Intent Test: " + currentUser.getUid());
-
                 updateUI(currentUser);
-                startActivity(intent);
+                goToMain(currentUser);
             }
         }
     }
-    // [END on_start_check_user]
 
+    private void goToMain(FirebaseUser currentUser){
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        //intent.putExtra("user_name", currentUser.getDisplayName().toString());
+        intent.putExtra("user_email", currentUser.getEmail().toString());
+        intent.putExtra("user_UID", currentUser.getUid().toString());
+        startActivity(intent);
+
+    }
+
+    String current_user_id;
+
+    // [END on_start_check_user]
     private void createAccount(String email, String password) {
         Log.d(TAG, "createAccount:" + email);
         if (!validateForm()) {
             return;
         }
-
       //  showProgressDialog();
-
         // [START create_user_with_email]
+        mAuth = FirebaseAuth.getInstance();
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -122,33 +133,38 @@ public class EmailPasswordActivity extends AppCompatActivity implements
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "createUserWithEmail:success");
                             FirebaseUser user = mAuth.getCurrentUser();
+                            updateUI(user);
 
-                            UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
-                                    .setDisplayName(mNameField.getText().toString())
-                                    .build();
-                            user.updateProfile(profileUpdates);
+                            //create new user database
+                            Map<String, Object> new_user = new HashMap<>();
+                            new_user.put("name", "");
+                            new_user.put("UID", user.getUid().toString());
+                            new_user.put("email", user.getEmail());
 
-                            //Create new collection for new user
-                            Map<String, Object> user_map = new HashMap<>();
-
-                            user_map.put("name", mNameField.getText().toString());
-                            db.collection("users")
-                                    .add(user_map)
-                                    .addOnSuccessListener(new OnSuccessListener<DocumentReference>() {
+                            // Add a new document with a generated ID
+                            db.collection("users").document(user.getUid().toString())
+                                    .set(new_user)
+                                    .addOnSuccessListener(new OnSuccessListener<Void>() {
                                         @Override
-                                        public void onSuccess(DocumentReference documentReference) {
-                                            Log.d(TAG, "DocumentSnapshot added with ID: " + documentReference.getId());
+                                        public void onSuccess(Void aVoid) {
+                                            Log.d(TAG, "Add new user: successful");
+                                            Toast.makeText(getApplicationContext(), "Account created", Toast.LENGTH_LONG).show();
                                         }
                                     })
                                     .addOnFailureListener(new OnFailureListener() {
                                         @Override
                                         public void onFailure(@NonNull Exception e) {
                                             Log.w(TAG, "Error adding document", e);
+                                            Toast.makeText(getApplicationContext(), "Account failed", Toast.LENGTH_LONG).show();
                                         }
                                     });
 
-                            updateUI(user);
+                            JournalEntry je = new JournalEntry();
+                            db.collection("users").document(user.getUid().toString())
+                                    .collection("entries")
+                                    .document("entry1").set(je.getHashMap());
 
+                            goToMain(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Log.w(TAG, "createUserWithEmail:failure", task.getException());
@@ -174,6 +190,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
         // showProgressDialog();
 
         // [START sign_in_with_email]
+        mAuth = FirebaseAuth.getInstance();
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -203,6 +220,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
     }
 
     private void signOut() {
+        mAuth = FirebaseAuth.getInstance();
         mAuth.signOut();
         updateUI(null);
     }
@@ -241,13 +259,14 @@ public class EmailPasswordActivity extends AppCompatActivity implements
     private boolean validateForm() {
         boolean valid = true;
 
+        /*
         String name = mNameField.getText().toString();
         if (TextUtils.isEmpty(name)) {
             mNameField.setError("Required.");
             valid = false;
         } else {
             mNameField.setError(null);
-        }
+        }*/
 
         String email = mEmailField.getText().toString();
         if (TextUtils.isEmpty(email)) {
@@ -274,8 +293,7 @@ public class EmailPasswordActivity extends AppCompatActivity implements
             mStatusTextView.setText(getString(R.string.emailpassword_status_fmt,
                     user.getEmail(), user.isEmailVerified()));
 
-            mDetailTextView.setText(user.getDisplayName().toString());
-            //mDetailTextView.setText(getString(R.string.firebase_status_fmt, user.getUid()));
+            mDetailTextView.setText(user.getUid().toString());
 
             findViewById(R.id.email_password_buttons).setVisibility(View.GONE);
             findViewById(R.id.email_password_fields).setVisibility(View.GONE);
